@@ -98,11 +98,9 @@ cars_labels = cars_target
 
 print(cars.head(5))
 
+#necessary for pipeline:
 df_cln = clean_and_drop(cars)  # would be cool to set ignore warning somehow
 df_cln = df_cln.iloc[:, 1:]
-
-imputer = SimpleImputer(strategy="median")
-
 
 categoricals = ["Name", "Location", "Fuel_Type", "Transmission", "Owner_Type", "Engine", "Seats",
                 "Model"]
@@ -139,7 +137,7 @@ lin_reg.fit(car_prepared, cars_labels)
 price_predictions = lin_reg.predict(car_prepared)
 lin_mse = mean_squared_error(cars_labels, price_predictions)
 lin_rmse = np.sqrt(lin_mse)
-print(lin_rmse)
+print(lin_rmse) # 2.1046
 
 # Next model evaluation:
 from sklearn.tree import DecisionTreeRegressor
@@ -151,7 +149,7 @@ tree_reg.fit(car_prepared, cars_labels)
 car_predictions = tree_reg.predict(car_prepared)
 tree_mse = mean_squared_error(cars_labels, car_predictions)
 tree_rmse = np.sqrt(tree_mse)
-tree_rmse
+tree_rmse # 0.02046
 
 # this seems even better, close to no error! Seems suspicious, lets check with Cross-Validation
 
@@ -161,7 +159,7 @@ scores = cross_val_score(tree_reg, car_prepared, cars_labels, scoring="neg_mean_
 tree_rmse_scores = np.sqrt(-scores)
 
 print('Scores', tree_rmse_scores)
-print('Mean', tree_rmse_scores.mean()) #4.82
+print('Mean', tree_rmse_scores.mean()) #4.777
 print('SD', tree_rmse_scores.std())
 
 #IT certainly seems like the Decision Tree is actually over fitting here!
@@ -170,7 +168,7 @@ linear_scores = cross_val_score(lin_reg, car_prepared, cars_labels, scoring =
 
 lin_rmse_scores = np.sqrt(-linear_scores)
 print('Scores', lin_rmse_scores)
-print('Mean', lin_rmse_scores.mean()) #4.7 performing slightly better than decision tree
+print('Mean', lin_rmse_scores.mean()) #4.71 performing sligthly better than decision tree
 print('SD', lin_rmse_scores.std())
 
 # so the linear regression and DecisionTree Model are preforming about the same!
@@ -184,14 +182,14 @@ forest_reg.fit(car_prepared, cars_labels)
 forest_preds = forest_reg.predict(car_prepared)
 forest_mse = mean_squared_error(cars_labels, forest_preds)
 forest_rmse = np.sqrt(forest_mse)
-forest_rmse  # much smaller at 0.015 lets check the cross validation!
+print(forest_rmse)  # now at 1.3124 lets check the cross validation!
 
 forest_scores = cross_val_score(forest_reg, car_prepared, cars_labels, scoring =
 "neg_mean_squared_error", cv=10)
 
 forest_rmse_scores = np.sqrt(-forest_scores)
 print('Scores', forest_rmse_scores)
-print('Mean', forest_rmse_scores.mean()) #It is better! 3.5
+print('Mean', forest_rmse_scores.mean()) #It is better! 3.544, takes a while to run
 print('SD', forest_rmse_scores.std())
 
 print('yes')
@@ -199,7 +197,7 @@ print('yes')
 # it is very cool that RandomForest on it's own is working better, now to try with a GridSearch
 #optimization
 
-#now attempt with grid search:
+#now attempt with grid search: explain how this works:
 
 from sklearn.model_selection import GridSearchCV
 
@@ -214,27 +212,29 @@ grid_search = GridSearchCV(forest_reg2, param_grid, cv=5,
                            return_train_score=True)
 
 grid_search.fit(car_prepared, cars_labels)
+#the below takes a long time to run
 grid_search.best_params_ # best parameters! it looks like bootstrap=False, estimators=10,
-# features=30)
+# features=100)
 
-forest_reg3 = RandomForestRegressor(n_estimators= 10, max_features=4,
+forest_reg3 = RandomForestRegressor(n_estimators= 10, max_features=100,
                                     random_state=42)
 forest_reg3.fit(car_prepared, cars_labels)
 
 forest_preds3 = forest_reg3.predict(car_prepared)
 forest_mse3 = mean_squared_error(cars_labels, forest_preds3)
 forest_rmse3 = np.sqrt(forest_mse3)
-forest_rmse3  # very small, 2.06
+forest_rmse3  # very small, 1.792, which is great!
 
 forest_scores3 = cross_val_score(forest_reg3, car_prepared, cars_labels, scoring =
 "neg_mean_squared_error", cv=10)
 
 forest_rmse_scores3 = np.sqrt(-forest_scores3)
 print('Scores', forest_rmse_scores3)
-print('Mean', forest_rmse_scores3.mean()) #It is slightly worse some how!
+print('Mean', forest_rmse_scores3.mean()) #It is slightly worse some how at 4.2, compared 20 3.4
+# forest.
 print('SD', forest_rmse_scores3.std())
 
-# mean is back down to 4.6, still not our best model! just going with plain random forest
+# mean is back down to 4.2, still not our best model! just going with plain random forest
 
 #keeping and testing with test data set and forest_reg:
 #performing the Train test split just because: doing it after formatting because of OHE constraints!
@@ -251,8 +251,9 @@ forest_reg_split.fit(df_train, train_labels)  # fit with training set!
 forest_preds_split = forest_reg.predict(df_test) # predict on test set!
 forest_mse = mean_squared_error(test_labels, forest_preds_split)
 forest_rmse = np.sqrt(forest_mse)
-forest_rmse  # much smaller at 1.097
+forest_rmse  # much smaller at 1.12 non validation score!
 
-print('Done')
+print('Done, last out put')
 
 #ok, run it through and correct out put numbers, and then immediately begin a write up on this!
+#talk about process, and what surprised me.
